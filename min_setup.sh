@@ -32,7 +32,6 @@ mv clion-* clion
 
 cd clion/plugins
 
-# Remoções seguras (POUCAS!)
 rm -rf fullLine
 rm -rf grazie
 rm -rf qodana
