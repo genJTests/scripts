@@ -30,8 +30,10 @@ rm -rf DatabaseTools clouds-* docker-*
 rm -rf web* css* html* sass* less*
 rm -rf tailwindcss postcss webpack styled-components
 rm -rf color-scheme-* keymap-* localization-*
-rm -rf grazi nextjs qodana
-rm -rf intellij-rust
+rm -rf grazie qodana intellij-rust
+rm -rf nextjs prettierJS tslint qml-plugin
+rm -rf cwm-plugin restClient gateway-plugin remote-dev-server
+rm -rf clion-radler fullLine
 EOF
 }
 
