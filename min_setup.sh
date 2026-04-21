@@ -192,7 +192,7 @@ main() {
   cleanup_system
   trim_and_zerofill
 
-  echo "[+] Concluído. Reinicie a VM."
+  echo "[+] Concluído. Reinicie a VM ."
 }
 
 main "$@"
