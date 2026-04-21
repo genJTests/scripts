@@ -60,6 +60,28 @@ install_prereqs() {
     graphviz
 }
 
+install_firefox() {
+  echo "[+] Instalando Firefox ESR"
+  apt install -y firefox-esr
+}
+
+set_firefox_default() {
+  echo "[+] Definindo Firefox ESR como navegador padrão"
+
+  sudo -u "$USER_NAME" bash <<EOF
+mkdir -p ~/.config
+
+cat > ~/.config/mimeapps.list <<EOL
+[Default Applications]
+text/html=firefox-esr.desktop
+x-scheme-handler/http=firefox-esr.desktop
+x-scheme-handler/https=firefox-esr.desktop
+x-scheme-handler/about=firefox-esr.desktop
+x-scheme-handler/unknown=firefox-esr.desktop
+EOL
+EOF
+}
+
 set_keyboard() {
   echo "[+] Configurando teclado ABNT2 (br)"
   if [ -f "${KEYBOARD_CONF}" ]; then
@@ -68,14 +90,12 @@ set_keyboard() {
       -e 's/^XKBLAYOUT=.*/XKBLAYOUT="br"/' \
       "${KEYBOARD_CONF}"
   else
-    echo "Arquivo ${KEYBOARD_CONF} não encontrado; criando..."
     cat > "${KEYBOARD_CONF}" <<EOF
 XKBMODEL="abnt2"
 XKBLAYOUT="br"
 EOF
   fi
 
-  # aplicar imediatamente (quando possível)
   setupcon || true
   localectl set-x11-keymap br abnt2 || true
 }
@@ -92,7 +112,7 @@ trim_and_zerofill() {
   fstrim -av || true
 
   if [ "${ZERO_FILL}" -eq 1 ]; then
-    echo "[+] Preenchendo espaço livre com zeros (para melhorar compressão da OVA)"
+    echo "[+] Preenchendo espaço livre com zeros"
     dd if=/dev/zero of=/zero.fill bs=1M status=progress || true
     rm -f /zero.fill
   fi
@@ -104,7 +124,6 @@ configure_shortcuts() {
   OPENBOX_CONF="/etc/xdg/openbox/rc.xml"
 
   if [ -f "$OPENBOX_CONF" ]; then
-    # Evita duplicação
     if ! grep -q '<keybind key="C-A-T">' "$OPENBOX_CONF"; then
       sed -i '/<\/keyboard>/i \
     <keybind key="C-A-T">\
@@ -112,28 +131,22 @@ configure_shortcuts() {
         <command>xterm</command>\
       </action>\
     </keybind>' "$OPENBOX_CONF"
-  
-    # Propaga para usuário
+    fi
+
     USER_CONF="/home/${USER_NAME}/.config/openbox"
     mkdir -p "$USER_CONF"
     cp "$OPENBOX_CONF" "$USER_CONF/lxde-rc.xml"
     chown -R ${USER_NAME}:${USER_NAME} /home/${USER_NAME}/.config
   fi
-  else
-    echo "Arquivo $OPENBOX_CONF não encontrado"
-  fi
 }
 
 setup_startup_script() {
-  echo "[+] Configurando script remoto para executar no boot (systemd)"
+  echo "[+] Configurando script remoto no boot"
 
   STARTUP_SCRIPT="/usr/local/bin/startup.sh"
   SERVICE_FILE="/etc/systemd/system/genesys_updater.service"
   SCRIPT_URL="https://raw.githubusercontent.com/genJTests/scripts/refs/heads/main/init.sh"
-  USER_NAME="vboxuser"
-  USER_HOME="/home/$USER_NAME"
 
-  # Baixa o script remoto
   if ! wget -qO "$STARTUP_SCRIPT" "$SCRIPT_URL"; then
     echo "Erro ao baixar script"
     exit 1
@@ -141,22 +154,17 @@ setup_startup_script() {
 
   chmod +x "$STARTUP_SCRIPT"
 
-  # Cria o serviço systemd
   cat > "$SERVICE_FILE" <<EOF
 [Unit]
 Description=Genesys Startup Script
 After=graphical.target network-online.target
-Wants=graphical.target network-online.target
 
 [Service]
 Type=simple
 User=root
-
 Environment=DISPLAY=:0
 Environment=XAUTHORITY=$USER_HOME/.Xauthority
-
 ExecStart=$STARTUP_SCRIPT
-
 Restart=on-failure
 RestartSec=5
 
@@ -176,13 +184,15 @@ main() {
   install_clion
   install_gui
   install_prereqs
+  install_firefox
+  set_firefox_default
   set_keyboard
   configure_shortcuts
   setup_startup_script
   cleanup_system
   trim_and_zerofill
 
-  echo "[+] Concluído. Reinicie a VM para aplicar completamente."
+  echo "[+] Concluído. Reinicie a VM."
 }
 
 main "$@"
