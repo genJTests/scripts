@@ -16,14 +16,17 @@ require_root() {
 }
 
 install_clion() {
+  echo "[+] Instalando CLion"
+
   sudo -u "$USER_NAME" bash <<EOF
+set -e
+
 cd "$USER_HOME"
 
 wget -O - https://download.jetbrains.com/cpp/CLion-2026.1.tar.gz | tar -xz
 mv clion-* clion
 
 cd clion/plugins
-
 rm -rf angular-plugin react-plugin vuejs-plugin
 rm -rf python-ce javascript-* nodeJS
 rm -rf DatabaseTools clouds-* docker-*
@@ -33,7 +36,24 @@ rm -rf color-scheme-* keymap-* localization-*
 rm -rf qodana intellij-rust
 rm -rf nextjs prettierJS tslint qml-plugin
 rm -rf restClient gateway-plugin remote-dev-server
+
+# Criar atalho no menu (Development)
+mkdir -p ~/.local/share/applications
+
+cat > ~/.local/share/applications/clion.desktop <<EOL
+[Desktop Entry]
+Name=CLion
+Exec=$USER_HOME/clion/bin/clion.sh
+Icon=$USER_HOME/clion/bin/clion.png
+Type=Application
+Categories=Development;IDE;
+Terminal=false
+EOL
+
 EOF
+
+  chown -R "$USER_NAME:$USER_NAME" "$USER_HOME/clion"
+  chown -R "$USER_NAME:$USER_NAME" "$USER_HOME/.local"
 }
 
 install_sudo_and_user() {
@@ -154,6 +174,9 @@ setup_startup_script() {
   SCRIPT_URL="https://raw.githubusercontent.com/joaomeloo/Genesys-Simulator/refs/heads/2026-1/scripts/init.sh"
   USER_NAME="vboxuser"
   USER_HOME="/home/$USER_NAME"
+
+  mkdir -p "$USER_HOME/Documents"
+  chown "$USER_NAME:$USER_NAME" "$USER_HOME/Documents"
 
   # Baixa o script remoto
   if ! wget -qO "$STARTUP_SCRIPT" "$SCRIPT_URL"; then
