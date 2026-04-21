@@ -19,7 +19,7 @@ install_clion() {
   sudo -u "$USER_NAME" bash <<EOF
 cd "$USER_HOME"
 
-wget -O - https://download.jetbrains.com/cpp/CLion-2026.1.tar.gz | tar -xz
+wget -O - https://download.jetbrains.com/cpp/CLion-2024.1.6.tar.gz | tar -xz
 mv clion-* clion
 
 cd clion/plugins
