@@ -3,6 +3,7 @@ set -euo pipefail
 
 # -------- CONFIGURÁVEIS --------
 USER_NAME="${SUDO_USER:-$(logname 2>/dev/null || echo vboxuser)}"
+USER_HOME="/home/$USER_NAME"
 KEYBOARD_CONF="/etc/default/keyboard"
 ZERO_FILL="${ZERO_FILL:-1}"   # 1 = habilita dd zero-fill
 # --------------------------------
@@ -12,6 +13,14 @@ require_root() {
     echo "Execute como root: use 'su -' ou 'sudo -i'"
     exit 1
   fi
+}
+
+install_clion() {
+  sudo -u "$USER_NAME" bash <<EOF
+cd "$USER_HOME"
+wget -O - https://download.jetbrains.com/cpp/CLion-2026.1.tar.gz | tar -xz
+mv clion-* clion
+EOF
 }
 
 install_sudo_and_user() {
@@ -107,7 +116,7 @@ setup_startup_script() {
 
   STARTUP_SCRIPT="/usr/local/bin/startup.sh"
   SERVICE_FILE="/etc/systemd/system/genesys_updater.service"
-  SCRIPT_URL="https://raw.githubusercontent.com/joaomeloo/Genesys-Simulator/refs/heads/2026-1/scripts/init.sh"
+  SCRIPT_URL="https://raw.githubusercontent.com/genJTests/scripts/refs/heads/main/init.sh"
   USER_NAME="vboxuser"
   USER_HOME="/home/$USER_NAME"
 
@@ -151,6 +160,7 @@ main() {
   require_root
 
   install_sudo_and_user
+  install_clion
   install_gui
   install_prereqs
   set_keyboard
