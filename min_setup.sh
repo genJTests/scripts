@@ -19,27 +19,20 @@ install_clion() {
   sudo -u "$USER_NAME" bash <<EOF
 cd "$USER_HOME"
 
-wget -O - https://download.jetbrains.com/cpp/CLion-2026.1.tar.gz | tar -xz \
-  --exclude='*/plugins/fullLine' \
-  --exclude='*/plugins/grazie' \
-  --exclude='*/plugins/qodana' \
-  --exclude='*/plugins/performanceTesting' \
-  --exclude='*/plugins/featuresTrainer' \
-  --exclude='*/plugins/searchEverywhereMl' \
-  --exclude='*/plugins/restClient'
-
+wget -O - https://download.jetbrains.com/cpp/CLion-2026.1.tar.gz | tar -xz
 mv clion-* clion
 
 cd clion/plugins
 
-rm -rf fullLine
-rm -rf grazie
-rm -rf qodana
-rm -rf performanceTesting
-rm -rf featuresTrainer
-rm -rf searchEverywhereMl
-rm -rf restClient
-
+rm -rf angular-plugin react-plugin vuejs-plugin
+rm -rf python-ce javascript-* nodeJS
+rm -rf DatabaseTools clouds-* docker-*
+rm -rf web* css* html* sass* less*
+rm -rf tailwindcss postcss webpack styled-components
+rm -rf color-scheme-* keymap-* localization-*
+rm -rf qodana intellij-rust
+rm -rf nextjs prettierJS tslint qml-plugin
+rm -rf restClient gateway-plugin remote-dev-server
 EOF
 }
 
