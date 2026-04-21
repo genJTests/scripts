@@ -22,6 +22,27 @@ install_sudo_and_user() {
   usermod -aG sudo "${USER_NAME}" || true
 }
 
+install_clion() {
+  sudo -u "$USER_NAME" bash <<EOF
+cd "$USER_HOME"
+
+wget -O - https://download.jetbrains.com/cpp/CLion-2026.1.tar.gz | tar -xz
+mv clion-* clion
+
+cd clion/plugins
+
+rm -rf angular-plugin react-plugin vuejs-plugin
+rm -rf python-ce javascript-* nodeJS
+rm -rf DatabaseTools clouds-* docker-*
+rm -rf web* css* html* sass* less*
+rm -rf tailwindcss postcss webpack styled-components
+rm -rf color-scheme-* keymap-* localization-*
+rm -rf qodana intellij-rust
+rm -rf nextjs prettierJS tslint qml-plugin
+rm -rf restClient gateway-plugin remote-dev-server
+EOF
+}
+
 install_gui_minimal() {
   echo "[+] Instalando GUI mínima (Xorg + Openbox + LXSession + LightDM)"
   apt update
@@ -178,6 +199,7 @@ main() {
   require_root
 
   install_sudo_and_user
+  install_clion
   install_gui_minimal
   install_prereqs
   install_firefox_minimal
