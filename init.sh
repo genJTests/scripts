@@ -75,7 +75,7 @@ if [ ! -d "$DEV_REPO_PATH" ]; then
     kill $PID 2>/dev/null || true
 fi
 
-# verifica atualizações dev sem atualizar
+# verifica atualizações dev sem atualizar automaticamente
 cd "$DEV_REPO_PATH"
 
 git fetch origin || true
@@ -104,9 +104,12 @@ if [[ "$INSTALLED_VERSION" != "$LATEST_VERSION" ]]; then
 
     tar -xzf "$TMP_DIR/genesys-linux.tar.gz" -C "$TMP_DIR"
 
-    cp -a "$TMP_DIR/$GENESYS_GUI_APP_EXEC" "$INSTALL_DIR"
-    cp -a "$TMP_DIR/$GENESYS_WEB_APP_EXEC" "$INSTALL_DIR"
-    cp -a "$TMP_DIR/$ICON_NAME" "$ICON_DIR"
+    # para o serviço antes de atualizar
+    systemctl --user stop genesys-web.service || true
+
+    cp -af "$TMP_DIR/$GENESYS_GUI_APP_EXEC" "$INSTALL_DIR"
+    cp -af "$TMP_DIR/$GENESYS_WEB_APP_EXEC" "$INSTALL_DIR"
+    cp -af "$TMP_DIR/$ICON_NAME" "$ICON_DIR"
 
     chmod +x "$INSTALL_DIR/$GENESYS_GUI_APP_EXEC"
     chmod +x "$INSTALL_DIR/$GENESYS_WEB_APP_EXEC"
