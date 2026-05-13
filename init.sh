@@ -9,18 +9,13 @@ exec > >(tee -a "$LOGFILE") 2>&1
 USER_NAME=$(whoami)
 
 DESKTOP_APP_DIR="$HOME/.local/share/applications/"
-REPO_URL=https://github.com/rlcancian/Genesys-Simulator.git
+REPO_URL=https://github.com/joaomeloo/Genesys-Simulator.git
 REPO_DIR="$HOME/Documents"
 
 # endereco dos releases
 USER_VERSION_FILE="$HOME/.genesys_user_version"
 
 LATEST_RELEASE_API="https://api.github.com/repos/joaomeloo/Genesys-Simulator/releases/latest"
-
-USER_RELEASE_DOWNLOAD_URL="https://github.com/joaomeloo/Genesys-Simulator/releases/latest/download/genesys-linux.tar.gz"
-
-# branch do executável do usuário
-USER_BRANCH="master"
 
 # arquivo de preferência do desenvolvedor
 DEV_BRANCH_FILE="$HOME/.genesys_dev_branch"
@@ -36,7 +31,7 @@ if [ ! -f "$DEV_BRANCH_FILE" ]; then
         -print \
         $'Escolha qual branch deseja seguir para desenvolvimento.\n\nEssa configuração ficará salva em:\n'"$DEV_BRANCH_FILE")
 
-    if [ "$CHOICE" = "Raiz" ]; then
+    if [ "$CHOICE" = "WorkInProgress" ]; then
         echo "WorkInProgress" > "$DEV_BRANCH_FILE"
     else
         echo "$DEFAULT_DEV_BRANCH" > "$DEV_BRANCH_FILE"
@@ -47,21 +42,16 @@ fi
 
 DEV_BRANCH=$(cat "$DEV_BRANCH_FILE")
 
-# Diretórios separados
-USER_REPO_PATH="$REPO_DIR/Genesys-User"
+# Diretório dev
 DEV_REPO_PATH="$REPO_DIR/Genesys-Dev"
 
 # Executavel do Genesys QT GUI
 GENESYS_GUI_APP_DISPLAY_NAME=GenESySQt
 GENESYS_GUI_APP_EXEC=genesys_qt_gui_application
 
-BUILD_GENESYS_GUI_APP_PATH="$USER_REPO_PATH/build/gui-app/source/applications/gui/qt/GenesysQtGUI/$GENESYS_GUI_APP_EXEC"
-
 GENESYS_WEB_APP_EXEC="genesys_web_app"
-BUILD_GENESYS_WEB_APP_PATH="$USER_REPO_PATH/build/web-app/source/applications/web/$GENESYS_WEB_APP_EXEC"
 
 ICON_NAME=genesysico.gif
-PROJECT_ICON_PATH="$USER_REPO_PATH/source/applications/gui/qt/GenesysQtGUI/resources/icons/$ICON_NAME"
 
 INSTALL_DIR="$HOME/.local/bin/"
 mkdir -p "$INSTALL_DIR"
@@ -74,23 +64,6 @@ until getent hosts github.com >/dev/null 2>&1; do
 done
 
 mkdir -p "$REPO_DIR"
-
-FIRST_INSTALL=0
-
-# =========================
-# REPOSITÓRIO DO USUÁRIO
-# =========================
-cd "$REPO_DIR"
-
-if [ ! -d "$USER_REPO_PATH" ]; then
-    gxmessage -buttons "" -timeout 9999 "Clonando versão de usuário (main)..." &
-    PID=$!
-
-    git clone -b "$USER_BRANCH" "$REPO_URL" "$USER_REPO_PATH"
-
-    kill $PID 2>/dev/null || true
-    FIRST_INSTALL=1
-fi
 
 # =========================
 # REPOSITÓRIO DEV
@@ -120,6 +93,11 @@ LATEST_VERSION=$(curl -s "$LATEST_RELEASE_API" \
     | grep '"tag_name"' \
     | cut -d '"' -f4)
 
+ASSET_URL=$(curl -s "$LATEST_RELEASE_API" \
+    | grep browser_download_url \
+    | cut -d '"' -f4 \
+    | head -n 1)
+
 if [[ "$INSTALLED_VERSION" != "$LATEST_VERSION" ]]; then
 
     gxmessage -buttons "" -timeout 9999 \
@@ -128,7 +106,7 @@ if [[ "$INSTALLED_VERSION" != "$LATEST_VERSION" ]]; then
 
     TMP_DIR=$(mktemp -d)
 
-    curl -L "$USER_RELEASE_DOWNLOAD_URL" \
+    curl -L "$ASSET_URL" \
         -o "$TMP_DIR/genesys-linux.tar.gz"
 
     tar -xzf "$TMP_DIR/genesys-linux.tar.gz" -C "$TMP_DIR"
