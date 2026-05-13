@@ -12,6 +12,13 @@ DESKTOP_APP_DIR="$HOME/.local/share/applications/"
 REPO_URL=https://github.com/rlcancian/Genesys-Simulator.git
 REPO_DIR="$HOME/Documents"
 
+# endereco dos releases
+USER_VERSION_FILE="$HOME/.genesys_user_version"
+
+LATEST_RELEASE_API="https://api.github.com/repos/joaomeloo/Genesys-Simulator/releases/latest"
+
+USER_RELEASE_DOWNLOAD_URL="https://github.com/joaomeloo/Genesys-Simulator/releases/latest/download/genesys-linux.tar.gz"
+
 # branch do executável do usuário
 USER_BRANCH="master"
 
@@ -104,36 +111,34 @@ git checkout "$DEV_BRANCH" || true
 git pull origin "$DEV_BRANCH" || true
 
 # =========================
-# USUÁRIO FINAL = MAIN
+# USER VIA GITHUB RELEASES
 # =========================
-cd "$USER_REPO_PATH"
 
-git rev-parse --is-inside-work-tree > /dev/null 2>&1 || exit 1
+INSTALLED_VERSION=$(cat "$USER_VERSION_FILE" 2>/dev/null || echo "none")
 
-git fetch origin
+LATEST_VERSION=$(curl -s "$LATEST_RELEASE_API" \
+    | grep '"tag_name"' \
+    | cut -d '"' -f4)
 
-LOCAL=$(git rev-parse HEAD)
-REMOTE=$(git rev-parse origin/$USER_BRANCH)
+if [[ "$INSTALLED_VERSION" != "$LATEST_VERSION" ]]; then
 
-if [[ "$LOCAL" != "$REMOTE" || "$FIRST_INSTALL" == 1 ]]; then
-
-    # usuário NÃO escolhe atualizar
-    gxmessage -buttons "" -timeout 9999 "Atualizando GenESyS..." &
+    gxmessage -buttons "" -timeout 9999 \
+        $'Baixando nova versão do GenESyS...\n\nVersão: '"$LATEST_VERSION" &
     PID=$!
 
-    git pull origin "$USER_BRANCH"
+    TMP_DIR=$(mktemp -d)
 
-    cmake --preset gui-app
-    cmake --build --preset gui-app
+    curl -L "$USER_RELEASE_DOWNLOAD_URL" \
+        -o "$TMP_DIR/genesys-linux.tar.gz"
 
-    cp -a "$BUILD_GENESYS_GUI_APP_PATH" "$INSTALL_DIR"
+    tar -xzf "$TMP_DIR/genesys-linux.tar.gz" -C "$TMP_DIR"
 
-    cmake --preset web-app
-    cmake --build --preset web-app
+    cp -a "$TMP_DIR/$GENESYS_GUI_APP_EXEC" "$INSTALL_DIR"
+    cp -a "$TMP_DIR/$GENESYS_WEB_APP_EXEC" "$INSTALL_DIR"
+    cp -a "$TMP_DIR/$ICON_NAME" "$ICON_DIR"
 
-    cp -a "$BUILD_GENESYS_WEB_APP_PATH" "$INSTALL_DIR"
-
-    cp -a "$PROJECT_ICON_PATH" "$ICON_DIR"
+    chmod +x "$INSTALL_DIR/$GENESYS_GUI_APP_EXEC"
+    chmod +x "$INSTALL_DIR/$GENESYS_WEB_APP_EXEC"
 
     mkdir -p "$DESKTOP_APP_DIR"
 
@@ -146,8 +151,6 @@ if [[ "$LOCAL" != "$REMOTE" || "$FIRST_INSTALL" == 1 ]]; then
         "Terminal=false" \
         "Categories=Development;" \
         > "${DESKTOP_APP_DIR}${GENESYS_GUI_APP_DISPLAY_NAME}.desktop"
-
-    rm -rf "$USER_REPO_PATH/build/"
 
     USER_SERVICE_DIR="$HOME/.config/systemd/user"
     mkdir -p "$USER_SERVICE_DIR"
@@ -162,8 +165,11 @@ if [[ "$LOCAL" != "$REMOTE" || "$FIRST_INSTALL" == 1 ]]; then
     systemctl --user enable genesys-web.service
     systemctl --user restart genesys-web.service
 
-    kill $PID 2>/dev/null || true
+    echo "$LATEST_VERSION" > "$USER_VERSION_FILE"
 
+    rm -rf "$TMP_DIR"
+
+    kill $PID 2>/dev/null || true
 fi
 
 # =========================
