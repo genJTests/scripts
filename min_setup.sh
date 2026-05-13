@@ -15,47 +15,6 @@ require_root() {
   fi
 }
 
-install_clion() {
-  echo "[+] Instalando CLion"
-
-  sudo -u "$USER_NAME" bash <<EOF
-set -e
-
-cd "$USER_HOME"
-
-wget -O - https://download.jetbrains.com/cpp/CLion-2026.1.tar.gz | tar -xz
-mv clion-* clion
-
-cd clion/plugins
-rm -rf angular-plugin react-plugin vuejs-plugin
-rm -rf python-ce javascript-* nodeJS
-rm -rf DatabaseTools clouds-* docker-*
-rm -rf web* css* html* sass* less*
-rm -rf tailwindcss postcss webpack styled-components
-rm -rf color-scheme-* keymap-* localization-*
-rm -rf qodana intellij-rust
-rm -rf nextjs prettierJS tslint qml-plugin
-rm -rf restClient gateway-plugin remote-dev-server
-
-# Criar atalho no menu (Development)
-mkdir -p ~/.local/share/applications
-
-cat > ~/.local/share/applications/clion.desktop <<EOL
-[Desktop Entry]
-Name=CLion
-Exec=$USER_HOME/clion/bin/clion.sh
-Icon=$USER_HOME/clion/bin/clion.png
-Type=Application
-Categories=Development;IDE;
-Terminal=false
-EOL
-
-EOF
-
-  chown -R "$USER_NAME:$USER_NAME" "$USER_HOME/clion"
-  chown -R "$USER_NAME:$USER_NAME" "$USER_HOME/.local"
-}
-
 install_sudo_and_user() {
   echo "[+] Instalando sudo e configurando usuário (${USER_NAME})"
   apt update
@@ -73,11 +32,12 @@ install_gui() {
 install_prereqs() {
   echo "[+] Instalando pré-requisitos (git, g++, Qt6, Graphviz)"
   apt install -y \
-    git g++ vim cmake ninja-build gxmessage \
+    git g++ vim cmake ninja-build gxmessage wget curl \
     qt6-base-dev qt6-base-dev-tools \
     qt6-tools-dev qt6-tools-dev-tools \
-    qt6-charts-dev \
-    graphviz
+    qt6-charts-dev qtcreator \
+    libsbml5-dev r-base ngspice \
+    graphviz octave
 }
 
 install_firefox() {
@@ -154,71 +114,153 @@ configure_shortcuts() {
         <command>xterm</command>\
       </action>\
     </keybind>' "$OPENBOX_CONF"
-  
-    # Propaga para usuário
-    USER_CONF="/home/${USER_NAME}/.config/openbox"
-    mkdir -p "$USER_CONF"
-    cp "$OPENBOX_CONF" "$USER_CONF/lxde-rc.xml"
-    chown -R ${USER_NAME}:${USER_NAME} /home/${USER_NAME}/.config
-  fi
+
+      USER_CONF="/home/${USER_NAME}/.config/openbox"
+      mkdir -p "$USER_CONF"
+      cp "$OPENBOX_CONF" "$USER_CONF/lxde-rc.xml"
+      chown -R ${USER_NAME}:${USER_NAME} /home/${USER_NAME}/.config
+    fi
   else
     echo "Arquivo $OPENBOX_CONF não encontrado"
   fi
 }
 
 setup_startup_script() {
-  echo "[+] Configurando script remoto para executar no boot (systemd)"
+  echo "[+] Configurando script remoto para executar via Autostart (XDG)"
 
-  STARTUP_SCRIPT="/usr/local/bin/startup.sh"
-  SERVICE_FILE="/etc/systemd/system/genesys_updater.service"
-  SCRIPT_URL="https://raw.githubusercontent.com/joaomeloo/Genesys-Simulator/refs/heads/2026-1/scripts/init.sh"
   USER_NAME="vboxuser"
   USER_HOME="/home/$USER_NAME"
 
-  mkdir -p "$USER_HOME/Documents"
-  chown "$USER_NAME:$USER_NAME" "$USER_HOME/Documents"
+  # Caminhos atualizados para Autostart
+  STARTUP_SCRIPT="$USER_HOME/.local/bin/genesys_startup.sh"
+  AUTOSTART_DIR="$USER_HOME/.config/autostart"
+  AUTOSTART_FILE="$AUTOSTART_DIR/genesys_init.desktop"
 
-  # Baixa o script remoto
+  # init.sh SEMPRE vem do main para usuários finais
+  SCRIPT_URL="https://raw.githubusercontent.com/genJTests/scripts/refs/heads/main/init.sh"
+
+  echo "[+] Criando diretórios..."
+  mkdir -p "$USER_HOME/.local/bin"
+  mkdir -p "$USER_HOME/Documents"
+  mkdir -p "$AUTOSTART_DIR"
+
+  echo "[+] Baixando script de inicialização..."
   if ! wget -qO "$STARTUP_SCRIPT" "$SCRIPT_URL"; then
-    echo "Erro ao baixar script"
+    echo "[-] Erro ao baixar script"
     exit 1
   fi
 
   chmod +x "$STARTUP_SCRIPT"
+  chown "$USER_NAME:$USER_NAME" "$STARTUP_SCRIPT"
 
-  # Cria o serviço systemd
-  cat > "$SERVICE_FILE" <<EOF
-[Unit]
-Description=Genesys Startup Script
-After=graphical.target network-online.target
-Wants=graphical.target network-online.target
-
-[Service]
-Type=simple
-User=root
-
-Environment=DISPLAY=:0
-Environment=XAUTHORITY=$USER_HOME/.Xauthority
-
-ExecStart=$STARTUP_SCRIPT
-
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=graphical.target
+  echo "[+] Criando arquivo de autostart..."
+  cat > "$AUTOSTART_FILE" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Genesys Simulator Updater
+Comment=Verifica atualizações do GenESyS ao iniciar a sessão
+Exec=$STARTUP_SCRIPT
+Icon=system-software-update
+Terminal=false
+Categories=Development;
+X-GNOME-Autostart-enabled=true
 EOF
 
+  chown -R "$USER_NAME:$USER_NAME" "$USER_HOME/.local"
+  chown -R "$USER_NAME:$USER_NAME" "$USER_HOME/.config"
+  chown "$USER_NAME:$USER_NAME" "$USER_HOME/Documents"
+  chmod +x "$AUTOSTART_FILE"
+}
+
+install_guest_add_util() {
+  local URL="https://raw.githubusercontent.com/rlcancian/Genesys-Simulator/refs/heads/currentStable/ova/install_guest_add.sh"
+  local TARGET="/usr/local/bin/install_guest_add"
+
+  echo "[+] Instalando utilitário install_guest_add..."
+
+  if ! wget -qO "$TARGET" "$URL"; then
+    echo "[-] Falha no download"
+    return 1
+  fi
+
+  # Permissão de execução
+  chmod +x "$TARGET"
+
+  echo "[+] Instalado em: $TARGET"
+}
+
+setup_ova_updater() {
+  echo "[+] Configurando updater da OVA com retry via systemd"
+
+  local RUNNER="/usr/local/bin/ova_update_runner"
+  local SERVICE="/etc/systemd/system/ova-update.service"
+
+  # updater da infraestrutura continua vindo do currentStable
+  local UPDATE_URL="https://raw.githubusercontent.com/rlcancian/Genesys-Simulator/refs/heads/currentStable/ova/update.sh"
+
+  # Runner (falha de propósito se não conseguir baixar)
+  cat > "$RUNNER" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+
+TMP_SCRIPT="/tmp/update.sh"
+UPDATE_URL="$UPDATE_URL"
+
+echo "[+] OVA updater iniciado (root)"
+
+# precisa de wget
+command -v wget >/dev/null 2>&1
+
+# tenta baixar (se falhar, script falha → systemd reinicia)
+wget -qO "\$TMP_SCRIPT" "\$UPDATE_URL"
+
+chmod +x "\$TMP_SCRIPT"
+
+# executa (se falhar, também dispara retry do systemd)
+"\$TMP_SCRIPT"
+
+rm -f "\$TMP_SCRIPT"
+
+echo "[+] Update finalizado com sucesso"
+EOF
+
+  chmod +x "$RUNNER"
+
+  # Service com retry
+  cat > "$SERVICE" <<EOF
+[Unit]
+Description=OVA Auto Update (root)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=$RUNNER
+
+# Retry controlado pelo systemd
+Restart=on-failure
+RestartSec=10
+StartLimitIntervalSec=300
+StartLimitBurst=20
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+  echo "[+] Recarregando systemd..."
   systemctl daemon-reexec
   systemctl daemon-reload
-  systemctl enable genesys_updater.service
+
+  echo "[+] Habilitando serviço..."
+  systemctl enable ova-update.service
+
+  echo "[+] Updater configurado com retry via systemd"
 }
 
 main() {
   require_root
 
   install_sudo_and_user
-  install_clion
   install_gui
   install_prereqs
   install_firefox
@@ -226,6 +268,8 @@ main() {
   set_keyboard
   configure_shortcuts
   setup_startup_script
+  install_guest_add_util
+  setup_ova_updater
   cleanup_system
   trim_and_zerofill
 
