@@ -25,9 +25,9 @@ DEFAULT_DEV_BRANCH="currentStable"
 if [ ! -f "$DEV_BRANCH_FILE" ]; then
 
     CHOICE=$(gxmessage -center -buttons \
-        "Nutella(currentStable):0,Raiz(WorkInProgress):1" \
+        "currentStable:0,WorkInProgress:1" \
         -print \
-        "Escolha qual branch deseja seguir para desenvolvimento.\n\nEssa configuração ficará salva em:\n$DEV_BRANCH_FILE")
+        $'Escolha qual branch deseja seguir para desenvolvimento.\n\nEssa configuração ficará salva em:\n'"$DEV_BRANCH_FILE")
 
     if [ "$CHOICE" = "Raiz" ]; then
         echo "WorkInProgress" > "$DEV_BRANCH_FILE"
@@ -35,7 +35,7 @@ if [ ! -f "$DEV_BRANCH_FILE" ]; then
         echo "$DEFAULT_DEV_BRANCH" > "$DEV_BRANCH_FILE"
     fi
 
-    gxmessage "Branch salvo em:\n$DEV_BRANCH_FILE"
+    gxmessage $'Branch salvo em:\n'"$DEV_BRANCH_FILE"
 fi
 
 DEV_BRANCH=$(cat "$DEV_BRANCH_FILE")
@@ -178,9 +178,9 @@ REMOTE_DEV=$(git rev-parse origin/$DEV_BRANCH)
 
 if [[ "$LOCAL_DEV" != "$REMOTE_DEV" ]]; then
 
-    if gxmessage -buttons Sim:0 \
+    if gxmessage -buttons "Sim:0,Não:1" \
              -default Sim \
-             "Há uma nova versão disponível para desenvolvedores.\nSeu GenESyS será atualizado. Confirma, ixtepô?"; then
+             $'Há uma nova versão disponível para desenvolvedores.\nSeu GenESyS será atualizado. Atualizar?'; then
 
         gxmessage -buttons "" -timeout 9999 "Atualizando ambiente de desenvolvimento..." &
         PID=$!
