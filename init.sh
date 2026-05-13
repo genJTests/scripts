@@ -6,24 +6,20 @@ set -x
 LOGFILE=/tmp/genesys_install.log
 exec > >(tee -a "$LOGFILE") 2>&1
 
-USER_NAME=$(whoami)
-
 DESKTOP_APP_DIR="$HOME/.local/share/applications/"
-REPO_URL=https://github.com/joaomeloo/Genesys-Simulator.git
+REPO_URL="https://github.com/rlcancian/Genesys-Simulator.git"
 REPO_DIR="$HOME/Documents"
 
-# endereco dos releases
+# releases do usuario final
 USER_VERSION_FILE="$HOME/.genesys_user_version"
-
 LATEST_RELEASE_API="https://api.github.com/repos/joaomeloo/Genesys-Simulator/releases/latest"
+USER_RELEASE_DOWNLOAD_URL="https://github.com/joaomeloo/Genesys-Simulator/releases/latest/download/genesys-linux.tar.gz"
 
-# arquivo de preferência do desenvolvedor
+# configuracao dev
 DEV_BRANCH_FILE="$HOME/.genesys_dev_branch"
-
-# default para dev nutella
 DEFAULT_DEV_BRANCH="currentStable"
 
-# escolha do branch do desenvolvedor
+# escolha da branch dev
 if [ ! -f "$DEV_BRANCH_FILE" ]; then
 
     CHOICE=$(gxmessage -center -buttons \
@@ -37,39 +33,41 @@ if [ ! -f "$DEV_BRANCH_FILE" ]; then
         echo "$DEFAULT_DEV_BRANCH" > "$DEV_BRANCH_FILE"
     fi
 
-    gxmessage $'Branch salvo em:\n'"$DEV_BRANCH_FILE"
+    gxmessage $'Branch salva em:\n'"$DEV_BRANCH_FILE"
 fi
 
 DEV_BRANCH=$(cat "$DEV_BRANCH_FILE")
 
-# Diretório dev
+# repositorio dev
 DEV_REPO_PATH="$REPO_DIR/Genesys-Dev"
 
-# Executavel do Genesys QT GUI
-GENESYS_GUI_APP_DISPLAY_NAME=GenESySQt
-GENESYS_GUI_APP_EXEC=genesys_qt_gui_application
-
+# executaveis
+GENESYS_GUI_APP_DISPLAY_NAME="GenESySQt"
+GENESYS_GUI_APP_EXEC="genesys_qt_gui_application"
 GENESYS_WEB_APP_EXEC="genesys_web_app"
 
-ICON_NAME=genesysico.gif
+ICON_NAME="genesysico.gif"
 
 INSTALL_DIR="$HOME/.local/bin/"
-mkdir -p "$INSTALL_DIR"
-
 ICON_DIR="$HOME/.local/share/icons/"
+
+mkdir -p "$INSTALL_DIR"
 mkdir -p "$ICON_DIR"
-
-until getent hosts github.com >/dev/null 2>&1; do
-  sleep 1
-done
-
 mkdir -p "$REPO_DIR"
+
+# espera internet
+until getent hosts github.com >/dev/null 2>&1; do
+    sleep 1
+done
 
 # =========================
 # REPOSITÓRIO DEV
 # =========================
+
 if [ ! -d "$DEV_REPO_PATH" ]; then
-    gxmessage -buttons "" -timeout 9999 "Clonando versão de desenvolvimento ($DEV_BRANCH)..." &
+
+    gxmessage -buttons "" -timeout 9999 \
+        "Clonando versão de desenvolvimento ($DEV_BRANCH)..." &
     PID=$!
 
     git clone -b "$DEV_BRANCH" "$REPO_URL" "$DEV_REPO_PATH"
@@ -77,11 +75,11 @@ if [ ! -d "$DEV_REPO_PATH" ]; then
     kill $PID 2>/dev/null || true
 fi
 
-# atualiza branch dev silenciosamente
+# verifica atualizações dev sem atualizar
 cd "$DEV_REPO_PATH"
+
 git fetch origin || true
 git checkout "$DEV_BRANCH" || true
-git pull origin "$DEV_BRANCH" || true
 
 # =========================
 # USER VIA GITHUB RELEASES
@@ -93,11 +91,6 @@ LATEST_VERSION=$(curl -s "$LATEST_RELEASE_API" \
     | grep '"tag_name"' \
     | cut -d '"' -f4)
 
-ASSET_URL=$(curl -s "$LATEST_RELEASE_API" \
-    | grep browser_download_url \
-    | cut -d '"' -f4 \
-    | head -n 1)
-
 if [[ "$INSTALLED_VERSION" != "$LATEST_VERSION" ]]; then
 
     gxmessage -buttons "" -timeout 9999 \
@@ -106,7 +99,7 @@ if [[ "$INSTALLED_VERSION" != "$LATEST_VERSION" ]]; then
 
     TMP_DIR=$(mktemp -d)
 
-    curl -L "$ASSET_URL" \
+    curl -L "$USER_RELEASE_DOWNLOAD_URL" \
         -o "$TMP_DIR/genesys-linux.tar.gz"
 
     tar -xzf "$TMP_DIR/genesys-linux.tar.gz" -C "$TMP_DIR"
@@ -153,20 +146,23 @@ fi
 # =========================
 # NOTIFICAÇÃO PARA DEV
 # =========================
+
 cd "$DEV_REPO_PATH"
 
 git fetch origin
 
 LOCAL_DEV=$(git rev-parse HEAD)
-REMOTE_DEV=$(git rev-parse origin/$DEV_BRANCH)
+REMOTE_DEV=$(git rev-parse origin/"$DEV_BRANCH")
 
 if [[ "$LOCAL_DEV" != "$REMOTE_DEV" ]]; then
 
-    if gxmessage -buttons "Sim:0,Não:1" \
-             -default Sim \
-             $'Há uma nova versão disponível para desenvolvedores.\nSeu GenESyS será atualizado. Atualizar?'; then
+    if gxmessage \
+        -buttons "Sim:0,Não:1" \
+        -default Sim \
+        $'Há uma nova versão disponível para desenvolvedores.\n\nAtualizar agora?'; then
 
-        gxmessage -buttons "" -timeout 9999 "Atualizando ambiente de desenvolvimento..." &
+        gxmessage -buttons "" -timeout 9999 \
+            "Atualizando ambiente de desenvolvimento..." &
         PID=$!
 
         git pull origin "$DEV_BRANCH"
