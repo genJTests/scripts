@@ -13,7 +13,7 @@ REPO_URL=https://github.com/rlcancian/Genesys-Simulator.git
 REPO_DIR="$HOME/Documents"
 
 # branch do executável do usuário
-USER_BRANCH="main"
+USER_BRANCH="master"
 
 # arquivo de preferência do desenvolvedor
 DEV_BRANCH_FILE="$HOME/.genesys_dev_branch"
