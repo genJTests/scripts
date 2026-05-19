@@ -46,7 +46,7 @@ update_1_1() {
 
   echo "[+] Instalando novo init.sh"
 
-  INIT_URL="https://raw.githubusercontent.com/rlcancian/Genesys-Simulator/refs/heads/currentStable/ova/init.sh"
+  INIT_URL="https://raw.githubusercontent.com/genJTests/scripts/refs/heads/main/init.sh"
 
   rm -f /usr/local/bin/genesys_init.sh || true
   wget -qO /usr/local/bin/genesys_init.sh "$INIT_URL"
