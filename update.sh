@@ -80,7 +80,7 @@ EOF
 
   echo "[+] Garantindo dependências modernas"
   apt-get update -y
-  apt-get install -y git curl wget gxmessage tar ca-certificates
+  apt-get install -y curl wget
 
   systemctl --user daemon-reload || true
   systemctl --user restart genesys-web.service || true
