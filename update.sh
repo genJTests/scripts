@@ -73,18 +73,17 @@ X-GNOME-Autostart-enabled=true
 Categories=Development;
 EOF
 
-  echo "[+] Migrando Genesys-Simulator para dentro de Genesys-Dev"
-
+  echo "[+] Migrando repositório para novo padrão (Genesys-Dev como raiz)"
+  
   OLD_REPO="$USER_HOME/Documents/Genesys-Simulator"
-  NEW_PARENT="$USER_HOME/Documents/Genesys-Dev"
-  NEW_REPO="$NEW_PARENT/Genesys-Simulator"
-
+  NEW_REPO="$USER_HOME/Documents/Genesys-Dev"
+  
   if [ -d "$OLD_REPO" ]; then
-    if [ ! -d "$NEW_REPO" ]; then
-      mv "$OLD_REPO" "$NEW_PARENT/"
-      echo "[+] Movido para $NEW_REPO"
+    if [ ! -d "$NEW_REPO/.git" ]; then
+      mv "$OLD_REPO" "$NEW_REPO"
+      echo "[+] Repo movido para $NEW_REPO"
     else
-      echo "[!] Destino já existe, não movendo"
+      echo "[!] Repo já existe em $NEW_REPO, não movendo"
     fi
   else
     echo "[!] Nenhum repositório antigo encontrado"
