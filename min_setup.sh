@@ -203,7 +203,7 @@ setup_ova_updater() {
 
   local RUNNER="/usr/local/bin/ova_update_runner"
   local SERVICE="/etc/systemd/system/ova-update.service"
-  local UPDATE_URL="https://raw.githubusercontent.com/Vitor-Calegari/Genesys-Simulator/refs/heads/currentStable-ova/ova/update.sh"
+  local UPDATE_URL="https://raw.githubusercontent.com/genJTests/scripts/refs/heads/main/update.sh"
 
   # Runner (falha de propósito se não conseguir baixar)
   cat > "$RUNNER" <<EOF
