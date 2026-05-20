@@ -41,7 +41,6 @@ update_1_1() {
 
   mkdir -p "$USER_HOME/.local/bin"
   mkdir -p "$USER_HOME/.config/autostart"
-  mkdir -p "$USER_HOME/Documents/Genesys-Dev"
 
   echo "[+] Removendo bootstrap antigo..."
   rm -f "$USER_HOME/.local/bin/genesys_startup.sh" || true
@@ -79,14 +78,12 @@ EOF
   NEW_REPO="$USER_HOME/Documents/Genesys-Dev"
   
   if [ -d "$OLD_REPO" ]; then
-    if [ ! -d "$NEW_REPO/.git" ]; then
+    if [ ! -e "$NEW_REPO" ]; then
       mv "$OLD_REPO" "$NEW_REPO"
-      echo "[+] Repo movido para $NEW_REPO"
+      echo "[+] Repo renomeado"
     else
-      echo "[!] Repo já existe em $NEW_REPO, não movendo"
+      echo "[!] Genesys-Dev já existe"
     fi
-  else
-    echo "[!] Nenhum repositório antigo encontrado"
   fi
 
   echo "[+] Limpando serviço antigo (apenas arquivo)"
