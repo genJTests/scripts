@@ -33,6 +33,7 @@ update_1_0() {
   # exemplo: apt update
 }
 
+
 update_1_1() {
   echo "[+] MIGRAÇÃO COMPLETA: INIT ANTIGO → NOVO SISTEMA"
 
@@ -90,20 +91,18 @@ EOF
     echo "[!] Nenhum repositório antigo encontrado"
   fi
 
-  echo "[+] Limpando serviço antigo"
-  sudo -u "$REAL_USER" systemctl --user stop genesys-web.service || true
+  echo "[+] Limpando serviço antigo (apenas arquivo)"
   rm -f "$USER_HOME/.config/systemd/user/genesys-web.service"
 
   echo "[+] Garantindo dependências"
   apt-get update -y
   apt-get install -y curl wget git gxmessage tar
 
+  echo "[+] Corrigindo permissões"
   chown -R "$REAL_USER:$REAL_USER" \
     "$USER_HOME/.local" \
     "$USER_HOME/.config" \
     "$USER_HOME/Documents"
-
-  sudo -u "$REAL_USER" systemctl --user daemon-reload || true
 
   echo "[+] MIGRAÇÃO CONCLUÍDA"
 }
