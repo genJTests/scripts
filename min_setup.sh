@@ -136,8 +136,7 @@ setup_startup_script() {
   AUTOSTART_DIR="$USER_HOME/.config/autostart"
   AUTOSTART_FILE="$AUTOSTART_DIR/genesys_init.desktop"
 
-  # init.sh SEMPRE vem do main para usuários finais
-  SCRIPT_URL="https://raw.githubusercontent.com/genJTests/scripts/refs/heads/main/init.sh"
+  SCRIPT_URL="https://raw.githubusercontent.com/rlcancian/Genesys-Simulator/refs/heads/currentStable/ova/init.sh"
 
   echo "[+] Criando diretórios..."
   mkdir -p "$USER_HOME/.local/bin"
@@ -172,30 +171,28 @@ EOF
   chmod +x "$AUTOSTART_FILE"
 }
 
-# install_guest_add_util() {
-#   local URL="https://raw.githubusercontent.com/rlcancian/Genesys-Simulator/refs/heads/currentStable/ova/install_guest_add.sh"
-#   local TARGET="/usr/local/bin/install_guest_add"
+install_guest_add_util() {
+  local URL="https://raw.githubusercontent.com/rlcancian/Genesys-Simulator/refs/heads/currentStable/ova/install_guest_add.sh"
+  local TARGET="/usr/local/bin/install_guest_add"
 
-#   echo "[+] Instalando utilitário install_guest_add..."
+  echo "[+] Instalando utilitário install_guest_add..."
 
-#   if ! wget -qO "$TARGET" "$URL"; then
-#     echo "[-] Falha no download"
-#     return 1
-#   fi
+  if ! wget -qO "$TARGET" "$URL"; then
+    echo "[-] Falha no download"
+    return 1
+  fi
 
-#   # Permissão de execução
-#   chmod +x "$TARGET"
+  # Permissão de execução
+  chmod +x "$TARGET"
 
-#   echo "[+] Instalado em: $TARGET"
-# }
+  echo "[+] Instalado em: $TARGET"
+}
 
 setup_ova_updater() {
   echo "[+] Configurando updater da OVA com retry via systemd"
 
   local RUNNER="/usr/local/bin/ova_update_runner"
   local SERVICE="/etc/systemd/system/ova-update.service"
-
-  # updater da infraestrutura continua vindo do currentStable
   local UPDATE_URL="https://raw.githubusercontent.com/rlcancian/Genesys-Simulator/refs/heads/currentStable/ova/update.sh"
 
   # Runner (falha de propósito se não conseguir baixar)
@@ -268,7 +265,7 @@ main() {
   set_keyboard
   configure_shortcuts
   setup_startup_script
-  # install_guest_add_util
+  install_guest_add_util
   setup_ova_updater
   cleanup_system
   trim_and_zerofill
