@@ -36,21 +36,21 @@ update_1_0() {
 update_1_1() {
   echo "[+] MIGRAÇÃO COMPLETA: INIT ANTIGO → NOVO SISTEMA"
 
-  USER_HOME="$(eval echo ~${SUDO_USER:-$USER})"
+  REAL_USER="${SUDO_USER:-$USER}"
+  USER_HOME="$(eval echo ~${REAL_USER})"
 
   mkdir -p "$USER_HOME/.local/bin"
   mkdir -p "$USER_HOME/.config/autostart"
+  mkdir -p "$USER_HOME/Documents/Genesys-Dev"
 
   echo "[+] Removendo bootstrap antigo..."
   rm -f "$USER_HOME/.local/bin/genesys_startup.sh" || true
 
   echo "[+] Instalando novo init.sh"
-
   INIT_URL="https://raw.githubusercontent.com/genJTests/scripts/refs/heads/main/init.sh"
 
-  rm -f /usr/local/bin/genesys_init.sh || true
   wget -qO /usr/local/bin/genesys_init.sh "$INIT_URL"
-  chmod +x /usr/local/bin/genesys_init.sh
+  chmod 755 /usr/local/bin/genesys_init.sh
 
   echo "[+] Criando launcher limpo"
   cat > "$USER_HOME/.local/bin/genesys_startup.sh" <<EOF
@@ -73,17 +73,37 @@ X-GNOME-Autostart-enabled=true
 Categories=Development;
 EOF
 
-  chown -R "$(whoami)":"$(whoami)" "$USER_HOME/.local" "$USER_HOME/.config"
+  echo "[+] Migrando Genesys-Simulator para dentro de Genesys-Dev"
 
-  echo "[+] Limpando resíduos antigos"
-  rm -rf "$USER_HOME/Documents/Genesys-Simulator/build" || true
+  OLD_REPO="$USER_HOME/Documents/Genesys-Simulator"
+  NEW_PARENT="$USER_HOME/Documents/Genesys-Dev"
+  NEW_REPO="$NEW_PARENT/Genesys-Simulator"
 
-  echo "[+] Garantindo dependências modernas"
+  if [ -d "$OLD_REPO" ]; then
+    if [ ! -d "$NEW_REPO" ]; then
+      mv "$OLD_REPO" "$NEW_PARENT/"
+      echo "[+] Movido para $NEW_REPO"
+    else
+      echo "[!] Destino já existe, não movendo"
+    fi
+  else
+    echo "[!] Nenhum repositório antigo encontrado"
+  fi
+
+  echo "[+] Limpando serviço antigo"
+  sudo -u "$REAL_USER" systemctl --user stop genesys-web.service || true
+  rm -f "$USER_HOME/.config/systemd/user/genesys-web.service"
+
+  echo "[+] Garantindo dependências"
   apt-get update -y
-  apt-get install -y curl wget
+  apt-get install -y curl wget git gxmessage tar
 
-  systemctl --user daemon-reload || true
-  systemctl --user restart genesys-web.service || true
+  chown -R "$REAL_USER:$REAL_USER" \
+    "$USER_HOME/.local" \
+    "$USER_HOME/.config" \
+    "$USER_HOME/Documents"
+
+  sudo -u "$REAL_USER" systemctl --user daemon-reload || true
 
   echo "[+] MIGRAÇÃO CONCLUÍDA"
 }
