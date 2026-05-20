@@ -33,12 +33,11 @@ update_1_0() {
   # exemplo: apt update
 }
 
-
 update_1_1() {
   echo "[+] MIGRAÇÃO COMPLETA: INIT ANTIGO → NOVO SISTEMA"
 
-  REAL_USER="${SUDO_USER:-$USER}"
-  USER_HOME="$(eval echo ~${REAL_USER})"
+  REAL_USER="vboxuser"
+  USER_HOME="/home/vboxuser"
 
   mkdir -p "$USER_HOME/.local/bin"
   mkdir -p "$USER_HOME/.config/autostart"
