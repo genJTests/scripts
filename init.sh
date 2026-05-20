@@ -7,7 +7,7 @@ LOGFILE=/tmp/genesys_install.log
 exec > >(tee -a "$LOGFILE") 2>&1
 
 DESKTOP_APP_DIR="$HOME/.local/share/applications/"
-REPO_URL="https://github.com/rlcancian/Genesys-Simulator.git"
+REPO_URL="https://github.com/joaomeloo/Genesys-Simulator.git"
 REPO_DIR="$HOME/Documents"
 
 # releases do usuario final
@@ -152,17 +152,60 @@ fi
 
 cd "$DEV_REPO_PATH"
 
+# =========================
+# VALIDAÇÃO DE BRANCH
+# =========================
+
+# detecta quando nao esta em nenhuma branch
+if ! git symbolic-ref -q HEAD > /dev/null; then
+    gxmessage -center -buttons "OK" \
+        "O repositorio nao esta em nenhuma branch.\n\nIsso geralmente ocorre quando foi feito checkout direto de um commit.\n\nAtualizacao bloqueada."
+    exit 0
+fi
+
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# verifica divergencia entre arquivo e repo
+if [[ "$CURRENT_BRANCH" != "$DEV_BRANCH" ]]; then
+    gxmessage -center -buttons "OK" \
+        $'Branch inconsistente detectada.\n\n'\
+$'Branch configurada:\n'"$DEV_BRANCH"$'\n\n'\
+$'Branch atual do repositorio:\n'"$CURRENT_BRANCH"$'\n\n'\
+$'Nenhuma atualizacao sera realizada ate que o arquivo\n'\
+"$DEV_BRANCH_FILE"$'\nseja ajustado para a branch correta.'
+    exit 0
+fi
+
+# =========================
+# VERIFICA ATUALIZAÇÃO + CONFLITO
+# =========================
+
 git fetch origin
 
 LOCAL_DEV=$(git rev-parse HEAD)
 REMOTE_DEV=$(git rev-parse origin/"$DEV_BRANCH")
+BASE=$(git merge-base HEAD origin/"$DEV_BRANCH")
 
 if [[ "$LOCAL_DEV" != "$REMOTE_DEV" ]]; then
 
+    # histórico divergente (conflito)
+    if [[ "$LOCAL_DEV" != "$BASE" && "$REMOTE_DEV" != "$BASE" ]]; then
+
+        gxmessage -center -buttons "OK" \
+            $'Conflito detectado.\n\n'\
+$'O historico local e remoto divergiram.\n'\
+$'Atualizacao automatica cancelada.\n\n'\
+$'Execute manualmente:\n'\
+"cd $DEV_REPO_PATH && git pull"
+
+        exit 0
+    fi
+
+    # atualização segura
     if gxmessage \
         -buttons "Sim:0,Não:1" \
         -default Sim \
-        $'Há uma nova versão disponível para desenvolvedores.\n\nAtualizar agora?'; then
+        $'Ha uma nova versao disponivel para desenvolvedores.\n\nAtualizar agora?'; then
 
         gxmessage -buttons "" -timeout 9999 \
             "Atualizando ambiente de desenvolvimento..." &
