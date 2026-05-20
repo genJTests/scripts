@@ -2,7 +2,7 @@
 set -euo pipefail
 
 VERSION_FILE="/etc/genesys_ova_version"
-CURRENT_VERSION="1.1" # Incremente ao fazer novo update
+CURRENT_VERSION="1.0" # Incremente ao fazer novo update
 
 require_root() {
   if [ "$(id -u)" -ne 0 ]; then
@@ -29,11 +29,6 @@ version_gt() {
 }
 
 update_1_0() {
-  echo "[+] Aplicando update 1.0"
-  # exemplo: apt update
-}
-
-update_1_1() {
   echo "[+] MIGRAÇÃO COMPLETA: INIT ANTIGO → NOVO SISTEMA"
 
   REAL_USER="vboxuser"
@@ -102,6 +97,10 @@ EOF
   echo "[+] MIGRAÇÃO CONCLUÍDA"
 }
 
+update_1_1() {
+# Adicione aqui
+}
+
 run_updates() {
   local INSTALLED
   INSTALLED=$(get_installed_version)
@@ -110,7 +109,7 @@ run_updates() {
   echo "[+] Versão alvo: $CURRENT_VERSION"
 
   # Adicione novas versoes ao fazer updates (Ex: for v in 1.0 1.1 1.2 do)
-  for v in 1.0 1.1; do
+  for v in 1.0; do
     if version_gt "$v" "$INSTALLED"; then
       FUNC="update_${v//./_}"
 
