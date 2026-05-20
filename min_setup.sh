@@ -171,6 +171,16 @@ EOF
   chmod +x "$AUTOSTART_FILE"
 }
 
+create_ova_version_file() {
+  echo "[+] Criando /etc/genesys_ova_version"
+
+  cat > /etc/genesys_ova_version <<EOF
+1.0
+EOF
+
+  chmod 644 /etc/genesys_ova_version
+}
+
 install_guest_add_util() {
   local URL="https://raw.githubusercontent.com/Vitor-Calegari/Genesys-Simulator/refs/heads/currentStable-ova/ova/install_guest_add.sh"
   local TARGET="/usr/local/bin/install_guest_add"
@@ -267,6 +277,7 @@ main() {
   setup_startup_script
   install_guest_add_util
   setup_ova_updater
+  create_ova_version_file
   cleanup_system
   trim_and_zerofill
 
