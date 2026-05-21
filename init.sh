@@ -79,7 +79,6 @@ fi
 cd "$DEV_REPO_PATH"
 
 git fetch origin || true
-git checkout "$DEV_BRANCH" || true
 
 # =========================
 # USER VIA GITHUB RELEASES
