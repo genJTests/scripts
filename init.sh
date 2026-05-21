@@ -73,9 +73,12 @@ if [ ! -d "$DEV_REPO_PATH" ]; then
     git clone -b "$DEV_BRANCH" "$REPO_URL" "$DEV_REPO_PATH"
 
     kill $PID 2>/dev/null || true
+
+    # salva estado inicial
+    cd "$DEV_REPO_PATH"
+    git config genesys.lastAppliedBranch "$DEV_BRANCH"
 fi
 
-# verifica atualizações dev sem atualizar automaticamente
 cd "$DEV_REPO_PATH"
 
 git fetch origin || true
@@ -103,7 +106,6 @@ if [[ "$INSTALLED_VERSION" != "$LATEST_VERSION" ]]; then
 
     tar -xzf "$TMP_DIR/genesys-linux.tar.gz" -C "$TMP_DIR"
 
-    # para o serviço antes de atualizar
     systemctl --user stop genesys-web.service || true
 
     cp -af "$TMP_DIR/$GENESYS_GUI_APP_EXEC" "$INSTALL_DIR"
@@ -146,49 +148,79 @@ if [[ "$INSTALLED_VERSION" != "$LATEST_VERSION" ]]; then
 fi
 
 # =========================
-# NOTIFICAÇÃO PARA DEV
+# VALIDAÇÃO DE BRANCH (NOVA)
 # =========================
 
-cd "$DEV_REPO_PATH"
-
-# =========================
-# VALIDAÇÃO DE BRANCH
-# =========================
-
-# detecta quando nao esta em nenhuma branch
+# detecta detached HEAD
 if ! git symbolic-ref -q HEAD > /dev/null; then
     gxmessage -center -buttons "OK" \
-        $'O repositório não está em nenhuma branch.\n\nIsso geralmente ocorre quando foi feito checkout direto de um commit.\n\nAtualização bloqueada.'
+        $'O repositório não está em nenhuma branch.\n\nAtualização bloqueada.'
     exit 0
 fi
 
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+LAST_APPLIED_BRANCH=$(git config --get genesys.lastAppliedBranch || echo "")
 
-# verifica divergencia entre arquivo e repo
-if [[ "$CURRENT_BRANCH" != "$DEV_BRANCH" ]]; then
-    gxmessage -center -buttons "OK" \
-        $'Branch inconsistente detectada.\n\n'\
-$'Branch configurada:\n'"$DEV_BRANCH"$'\n\n'\
-$'Branch atual do repositório:\n'"$CURRENT_BRANCH"$'\n\n'\
-$'Nenhuma atualização será realizada até que o arquivo\n'\
-"$DEV_BRANCH_FILE"$'\nseja ajustado para a branch correta.'
-    exit 0
-fi
+# =========================
+# CASO 1: usuário alterou config
+# =========================
 
-# VERIFICA ALTERAÇÕES LOCAIS
+if [[ "$DEV_BRANCH" != "$LAST_APPLIED_BRANCH" ]]; then
 
-if [[ -n "$(git status --porcelain)" ]]; then
-    gxmessage -center -buttons "OK" \
-        $'Alterações locais detectadas no repositório.\n\n'\
-$'Existem arquivos modificados, staged ou não rastreados.\n\n'\
-$'Atualização automática bloqueada para evitar perda de dados.\n\n'\
-$'Resolva manualmente com:\n'\
-"cd $DEV_REPO_PATH && git status"
+    if [[ -n "$(git status --porcelain)" ]]; then
+        gxmessage -center -buttons "OK" \
+            $'Existem alterações locais.\n\nNão foi possível trocar automaticamente de branch.'
+        exit 0
+    fi
+
+    gxmessage -buttons "" -timeout 5 \
+        "Aplicando nova branch: $DEV_BRANCH"
+
+    git fetch origin
+
+    if git show-ref --verify --quiet "refs/heads/$DEV_BRANCH"; then
+        if ! git checkout "$DEV_BRANCH"; then
+            gxmessage -center -buttons "OK" \
+                "Erro ao trocar de branch."
+            exit 0
+        fi
+    else
+        if ! git checkout -b "$DEV_BRANCH" "origin/$DEV_BRANCH"; then
+            gxmessage -center -buttons "OK" \
+                "Erro ao criar/trocar branch."
+            exit 0
+        fi
+    fi
+
+    git config genesys.lastAppliedBranch "$DEV_BRANCH"
     exit 0
 fi
 
 # =========================
-# VERIFICA ATUALIZAÇÃO + CONFLITO
+# CASO 2: usuário fez checkout manual
+# =========================
+
+if [[ "$CURRENT_BRANCH" != "$DEV_BRANCH" ]]; then
+    gxmessage -center -buttons "OK" \
+        $'Branch inconsistente detectada.\n\n'\
+$'Configurada:\n'"$DEV_BRANCH"$'\n\n'\
+$'Atual:\n'"$CURRENT_BRANCH"$'\n\n'\
+$'Nenhuma atualização será realizada.'
+    exit 0
+fi
+
+# =========================
+# VERIFICA ALTERAÇÕES LOCAIS
+# =========================
+
+if [[ -n "$(git status --porcelain)" ]]; then
+    gxmessage -center -buttons "OK" \
+        $'Alterações locais detectadas.\n\nAtualização automática bloqueada.'
+    exit 0
+fi
+
+# =========================
+# ATUALIZAÇÃO SEGURA
 # =========================
 
 git fetch origin
@@ -199,27 +231,20 @@ BASE=$(git merge-base HEAD origin/"$DEV_BRANCH")
 
 if [[ "$LOCAL_DEV" != "$REMOTE_DEV" ]]; then
 
-    # histórico divergente (conflito)
     if [[ "$LOCAL_DEV" != "$BASE" && "$REMOTE_DEV" != "$BASE" ]]; then
-
         gxmessage -center -buttons "OK" \
-            $'Conflito detectado.\n\n'\
-$'O histórico local e remoto divergiram.\n'\
-$'Atualização automática cancelada.\n\n'\
-$'Execute manualmente:\n'\
+            $'Conflito detectado.\n\nExecute manualmente:\n'\
 "cd $DEV_REPO_PATH && git pull"
-
         exit 0
     fi
 
-    # atualização segura
     if gxmessage \
         -buttons "Sim:0,Não:1" \
         -default Sim \
-        $'Há uma nova versão disponível para desenvolvedores.\n\nAtualizar agora?'; then
+        $'Nova versão disponível para dev.\n\nAtualizar agora?'; then
 
         gxmessage -buttons "" -timeout 9999 \
-            "Atualizando ambiente de desenvolvimento..." &
+            "Atualizando..." &
         PID=$!
 
         git pull origin "$DEV_BRANCH"
