@@ -229,14 +229,8 @@ LOCAL_DEV=$(git rev-parse HEAD)
 REMOTE_DEV=$(git rev-parse origin/"$DEV_BRANCH")
 BASE=$(git merge-base HEAD origin/"$DEV_BRANCH")
 
-if [[ "$LOCAL_DEV" != "$REMOTE_DEV" ]]; then
-
-    if [[ "$LOCAL_DEV" != "$BASE" && "$REMOTE_DEV" != "$BASE" ]]; then
-        gxmessage -center -buttons "OK" \
-            $'Conflito detectado.\n\nExecute manualmente:\n'\
-"cd $DEV_REPO_PATH && git pull"
-        exit 0
-    fi
+# remoto avançou
+if [[ "$LOCAL_DEV" == "$BASE" && "$REMOTE_DEV" != "$BASE" ]]; then
 
     if gxmessage \
         -buttons "Sim:0,Não:1" \
@@ -251,4 +245,11 @@ if [[ "$LOCAL_DEV" != "$REMOTE_DEV" ]]; then
 
         kill $PID 2>/dev/null || true
     fi
+
+# divergiram
+elif [[ "$LOCAL_DEV" != "$BASE" && "$REMOTE_DEV" != "$BASE" ]]; then
+
+    gxmessage -center -buttons "OK" \
+        $'Conflito detectado.\n\nExecute manualmente:\n'\
+"cd $DEV_REPO_PATH && git pull"
 fi
