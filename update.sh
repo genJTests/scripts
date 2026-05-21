@@ -110,10 +110,13 @@ EOF
 
   DEV_BRANCH_FILE="$USER_HOME/.genesys_dev_branch"
   echo "currentStable" > "$DEV_BRANCH_FILE"
-
-  if [ -d "$DEV_REPO_PATH/.git" ]; then
-    cd "$DEV_REPO_PATH"
-    git config genesys.lastAppliedBranch "currentStable"
+  
+  if git -C "$DEV_REPO_PATH" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      sudo -u "$REAL_USER" \
+          git -C "$DEV_REPO_PATH" \
+          config genesys.lastAppliedBranch "currentStable"
+  else
+      echo "[!] Repo inválido ou não inicializado em: $DEV_REPO_PATH"
   fi
 
   echo "[+] Limpando serviço antigo"
