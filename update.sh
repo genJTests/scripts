@@ -40,6 +40,10 @@ update_1_0() {
   echo "[+] Removendo bootstrap antigo..."
   rm -f "$USER_HOME/.local/bin/genesys_startup.sh" || true
 
+  echo "[+] Garantindo dependências básicas"
+  apt-get update -y || true
+  apt-get install -y wget curl git gxmessage tar || true
+
   echo "[+] Instalando novo init.sh"
   INIT_URL="https://raw.githubusercontent.com/genJTests/scripts/refs/heads/main/init.sh"
 
@@ -52,12 +56,14 @@ update_1_0() {
       break
     fi
 
-    sleep 2
+    echo "[!] Falha no download, aguardando rede..."
+    sleep 5
   done
 
   if [ "$DOWNLOAD_OK" -ne 1 ]; then
-    echo "[-] Falha ao baixar init.sh após 3 tentativas"
-    exit 1
+    echo "[!] Falha ao baixar init.sh após 3 tentativas"
+    echo "[!] Pulando update (tentará novamente no próximo boot)"
+    return 0
   fi
 
   chmod 755 /usr/local/bin/genesys_init.sh
@@ -83,11 +89,11 @@ X-GNOME-Autostart-enabled=true
 Categories=Development;
 EOF
 
-  echo "[+] Migrando repositório para novo padrão (Genesys-Dev como raiz)"
-  
+  echo "[+] Migrando repositório para novo padrão"
+
   OLD_REPO="$USER_HOME/Documents/Genesys-Simulator"
   NEW_REPO="$USER_HOME/Documents/Genesys-Dev"
-  
+
   if [ -d "$OLD_REPO" ]; then
     if [ ! -e "$NEW_REPO" ]; then
       mv "$OLD_REPO" "$NEW_REPO"
@@ -96,33 +102,28 @@ EOF
       echo "[!] Genesys-Dev já existe"
     fi
   fi
-  
+
+  DEV_REPO_PATH="$NEW_REPO"
+  [ -d "$DEV_REPO_PATH" ] || DEV_REPO_PATH="$OLD_REPO"
+
   echo "[+] Forçando configuração padrão (currentStable)"
 
   DEV_BRANCH_FILE="$USER_HOME/.genesys_dev_branch"
-  DEV_REPO_PATH="$NEW_REPO"
-
-  # seta arquivo de config do usuário
   echo "currentStable" > "$DEV_BRANCH_FILE"
 
-  # seta lastAppliedBranch no git
   if [ -d "$DEV_REPO_PATH/.git" ]; then
     cd "$DEV_REPO_PATH"
     git config genesys.lastAppliedBranch "currentStable"
   fi
 
-  echo "[+] Limpando serviço antigo (apenas arquivo)"
+  echo "[+] Limpando serviço antigo"
   rm -f "$USER_HOME/.config/systemd/user/genesys-web.service"
-
-  echo "[+] Garantindo dependências"
-  apt-get update -y
-  apt-get install -y curl wget git gxmessage tar
 
   echo "[+] Corrigindo permissões"
   chown -R "$REAL_USER:$REAL_USER" \
     "$USER_HOME/.local" \
     "$USER_HOME/.config" \
-    "$USER_HOME/Documents"
+    "$USER_HOME/Documents" || true
 
   chown "$REAL_USER:$REAL_USER" "$DEV_BRANCH_FILE" || true
 
