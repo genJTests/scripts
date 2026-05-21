@@ -148,13 +148,13 @@ if [[ "$INSTALLED_VERSION" != "$LATEST_VERSION" ]]; then
 fi
 
 # =========================
-# VALIDAÇÃO DE BRANCH (NOVA)
+# VALIDAÇÃO DE BRANCH
 # =========================
 
 # detecta detached HEAD
 if ! git symbolic-ref -q HEAD > /dev/null; then
     gxmessage -center -buttons "OK" \
-        $'O repositório não está em nenhuma branch.\n\nAtualização bloqueada.'
+        $'O repositório não está em nenhuma branch.\n\nIsso geralmente ocorre quando foi feito checkout direto de um commit.\n\nAtualização bloqueada.'
     exit 0
 fi
 
@@ -215,7 +215,11 @@ fi
 
 if [[ -n "$(git status --porcelain)" ]]; then
     gxmessage -center -buttons "OK" \
-        $'Alterações locais detectadas.\n\nAtualização automática bloqueada.'
+        $'Alterações locais detectadas no repositório.\n\n'\
+$'Existem arquivos modificados, staged ou não rastreados.\n\n'\
+$'Atualização automática bloqueada para evitar perda de dados.\n\n'\
+$'Resolva manualmente com:\n'\
+"cd $DEV_REPO_PATH && git status"
     exit 0
 fi
 
@@ -250,6 +254,9 @@ if [[ "$LOCAL_DEV" == "$BASE" && "$REMOTE_DEV" != "$BASE" ]]; then
 elif [[ "$LOCAL_DEV" != "$BASE" && "$REMOTE_DEV" != "$BASE" ]]; then
 
     gxmessage -center -buttons "OK" \
-        $'Conflito detectado.\n\nExecute manualmente:\n'\
+        $'Conflito detectado.\n\n'\
+$'O histórico local e remoto divergiram.\n'\
+$'Atualização automática cancelada.\n\n'\
+$'Execute manualmente:\n'\
 "cd $DEV_REPO_PATH && git pull"
 fi
