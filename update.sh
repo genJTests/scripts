@@ -107,16 +107,17 @@ EOF
   [ -d "$DEV_REPO_PATH" ] || DEV_REPO_PATH="$OLD_REPO"
 
   echo "[+] Forçando configuração padrão (currentStable)"
-
+  
   DEV_BRANCH_FILE="$USER_HOME/.genesys_dev_branch"
   echo "currentStable" > "$DEV_BRANCH_FILE"
   
-  if git -C "$DEV_REPO_PATH" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-      sudo -u "$REAL_USER" \
-          git -C "$DEV_REPO_PATH" \
+  # garante que roda como usuário correto e no repo correto
+  if sudo -u "$REAL_USER" git -C "$DEV_REPO_PATH" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+      sudo -u "$REAL_USER" git -C "$DEV_REPO_PATH" \
           config genesys.lastAppliedBranch "currentStable"
   else
-      echo "[!] Repo inválido ou não inicializado em: $DEV_REPO_PATH"
+      echo "[!] Repo inválido ou não inicializado: $DEV_REPO_PATH"
+      echo "[!] Ignorando git config para evitar crash do service"
   fi
 
   echo "[+] Limpando serviço antigo"
