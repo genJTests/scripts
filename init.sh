@@ -158,7 +158,7 @@ cd "$DEV_REPO_PATH"
 # detecta quando nao esta em nenhuma branch
 if ! git symbolic-ref -q HEAD > /dev/null; then
     gxmessage -center -buttons "OK" \
-        "O repositorio nao esta em nenhuma branch.\n\nIsso geralmente ocorre quando foi feito checkout direto de um commit.\n\nAtualizacao bloqueada."
+        $'O repositório não está em nenhuma branch.\n\nIsso geralmente ocorre quando foi feito checkout direto de um commit.\n\nAtualização bloqueada.'
     exit 0
 fi
 
@@ -169,8 +169,8 @@ if [[ "$CURRENT_BRANCH" != "$DEV_BRANCH" ]]; then
     gxmessage -center -buttons "OK" \
         $'Branch inconsistente detectada.\n\n'\
 $'Branch configurada:\n'"$DEV_BRANCH"$'\n\n'\
-$'Branch atual do repositorio:\n'"$CURRENT_BRANCH"$'\n\n'\
-$'Nenhuma atualizacao sera realizada ate que o arquivo\n'\
+$'Branch atual do repositório:\n'"$CURRENT_BRANCH"$'\n\n'\
+$'Nenhuma atualização será realizada até que o arquivo\n'\
 "$DEV_BRANCH_FILE"$'\nseja ajustado para a branch correta.'
     exit 0
 fi
@@ -179,9 +179,9 @@ fi
 
 if [[ -n "$(git status --porcelain)" ]]; then
     gxmessage -center -buttons "OK" \
-        $'Alteracoes locais detectadas no repositorio.\n\n'\
-$'Existem arquivos modificados, staged ou nao rastreados.\n\n'\
-$'Atualizacao automatica bloqueada para evitar perda de dados.\n\n'\
+        $'Alterações locais detectadas no repositório.\n\n'\
+$'Existem arquivos modificados, staged ou não rastreados.\n\n'\
+$'Atualização automática bloqueada para evitar perda de dados.\n\n'\
 $'Resolva manualmente com:\n'\
 "cd $DEV_REPO_PATH && git status"
     exit 0
@@ -204,8 +204,8 @@ if [[ "$LOCAL_DEV" != "$REMOTE_DEV" ]]; then
 
         gxmessage -center -buttons "OK" \
             $'Conflito detectado.\n\n'\
-$'O historico local e remoto divergiram.\n'\
-$'Atualizacao automatica cancelada.\n\n'\
+$'O histórico local e remoto divergiram.\n'\
+$'Atualização automática cancelada.\n\n'\
 $'Execute manualmente:\n'\
 "cd $DEV_REPO_PATH && git pull"
 
@@ -216,7 +216,7 @@ $'Execute manualmente:\n'\
     if gxmessage \
         -buttons "Sim:0,Não:1" \
         -default Sim \
-        $'Ha uma nova versao disponivel para desenvolvedores.\n\nAtualizar agora?'; then
+        $'Há uma nova versão disponível para desenvolvedores.\n\nAtualizar agora?'; then
 
         gxmessage -buttons "" -timeout 9999 \
             "Atualizando ambiente de desenvolvimento..." &
