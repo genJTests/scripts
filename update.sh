@@ -96,6 +96,20 @@ EOF
       echo "[!] Genesys-Dev já existe"
     fi
   fi
+  
+  echo "[+] Forçando configuração padrão (currentStable)"
+
+  DEV_BRANCH_FILE="$USER_HOME/.genesys_dev_branch"
+  DEV_REPO_PATH="$NEW_REPO"
+
+  # seta arquivo de config do usuário
+  echo "currentStable" > "$DEV_BRANCH_FILE"
+
+  # seta lastAppliedBranch no git
+  if [ -d "$DEV_REPO_PATH/.git" ]; then
+    cd "$DEV_REPO_PATH"
+    git config genesys.lastAppliedBranch "currentStable"
+  fi
 
   echo "[+] Limpando serviço antigo (apenas arquivo)"
   rm -f "$USER_HOME/.config/systemd/user/genesys-web.service"
@@ -109,6 +123,8 @@ EOF
     "$USER_HOME/.local" \
     "$USER_HOME/.config" \
     "$USER_HOME/Documents"
+
+  chown "$REAL_USER:$REAL_USER" "$DEV_BRANCH_FILE" || true
 
   echo "[+] MIGRAÇÃO CONCLUÍDA"
 }
