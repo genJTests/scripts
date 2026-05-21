@@ -42,7 +42,7 @@ update_1_0() {
 
   echo "[+] Garantindo dependências básicas"
   apt-get update -y || true
-  apt-get install -y wget curl git gxmessage tar || true
+  apt-get install -y wget curl git gxmessage tar mousepad|| true
 
   echo "[+] Instalando novo init.sh"
   INIT_URL="https://raw.githubusercontent.com/genJTests/scripts/refs/heads/main/init.sh"
