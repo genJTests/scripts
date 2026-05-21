@@ -43,7 +43,23 @@ update_1_0() {
   echo "[+] Instalando novo init.sh"
   INIT_URL="https://raw.githubusercontent.com/genJTests/scripts/refs/heads/main/init.sh"
 
-  wget -qO /usr/local/bin/genesys_init.sh "$INIT_URL"
+  DOWNLOAD_OK=0
+  for i in 1 2 3; do
+    echo "[+] Tentando baixar init.sh (tentativa $i)..."
+
+    if wget -qO /usr/local/bin/genesys_init.sh "$INIT_URL"; then
+      DOWNLOAD_OK=1
+      break
+    fi
+
+    sleep 2
+  done
+
+  if [ "$DOWNLOAD_OK" -ne 1 ]; then
+    echo "[-] Falha ao baixar init.sh após 3 tentativas"
+    exit 1
+  fi
+
   chmod 755 /usr/local/bin/genesys_init.sh
 
   echo "[+] Criando launcher limpo"
@@ -109,7 +125,6 @@ run_updates() {
   echo "[+] Versão instalada: $INSTALLED"
   echo "[+] Versão alvo: $CURRENT_VERSION"
 
-  # Adicione novas versoes ao fazer updates (Ex: for v in 1.0 1.1 1.2 do)
   for v in 1.0; do
     if version_gt "$v" "$INSTALLED"; then
       FUNC="update_${v//./_}"
