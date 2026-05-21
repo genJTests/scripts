@@ -116,8 +116,9 @@ EOF
   
       cd "$DEV_REPO_PATH"
       
-      echo "[+] Limpando cache Qt Creator"
-      find . -name 'CMakeLists.txt.user' -delete
+      echo "[+] Limpando cache Qt Creator/CMake"
+      find . \( -name 'CMakeLists.txt.user' -o -name 'CMakeCache.txt' \) -delete
+      find . -type d \( -name 'build' -o -name 'cmake-build-*' \) -exec rm -rf -- {} +
   
       if sudo -u "$REAL_USER" git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
           sudo -u "$REAL_USER" git config genesys.lastAppliedBranch "currentStable"
