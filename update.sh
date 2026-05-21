@@ -90,30 +90,55 @@ Categories=Development;
 EOF
 
   echo "[+] Migrando repositório para novo padrão"
-
+  
   OLD_REPO="$USER_HOME/Documents/Genesys-Simulator"
   NEW_REPO="$USER_HOME/Documents/Genesys-Dev"
-
-  if [ -d "$OLD_REPO" ]; then
+  
+  echo "[DEBUG] OLD_REPO=$OLD_REPO"
+  echo "[DEBUG] NEW_REPO=$NEW_REPO"
+  
+  # sempre parte do princípio que OLD_REPO é o válido
+  if [ -d "$OLD_REPO/.git" ]; then
+    echo "[DEBUG] OLD_REPO tem .git"
+  
     if [ ! -e "$NEW_REPO" ]; then
+      echo "[+] Renomeando repo..."
       mv "$OLD_REPO" "$NEW_REPO"
-      echo "[+] Repo renomeado"
     else
-      echo "[!] Genesys-Dev já existe"
+      echo "[!] NEW_REPO já existe, NÃO vou mover"
     fi
+  else
+    echo "[ERRO] OLD_REPO não tem .git (isso não deveria acontecer)"
   fi
-
-  DEV_REPO_PATH="$NEW_REPO"
-  [ -d "$DEV_REPO_PATH" ] || DEV_REPO_PATH="$OLD_REPO"
-
+  
+  # -------- ESCOLHA CORRETA DO REPO --------
+  if [ -d "$NEW_REPO/.git" ]; then
+    DEV_REPO_PATH="$NEW_REPO"
+  elif [ -d "$OLD_REPO/.git" ]; then
+    DEV_REPO_PATH="$OLD_REPO"
+  else
+    DEV_REPO_PATH=""
+  fi
+  
+  echo "[DEBUG] DEV_REPO_PATH escolhido: $DEV_REPO_PATH"
+  
+  # -------- CONFIG --------
   echo "[+] Forçando configuração padrão (currentStable)"
-
+  
   DEV_BRANCH_FILE="$USER_HOME/.genesys_dev_branch"
   echo "currentStable" > "$DEV_BRANCH_FILE"
-
-  if [ -d "$DEV_REPO_PATH/.git" ]; then
-    cd "$DEV_REPO_PATH"
-    git config genesys.lastAppliedBranch "currentStable"
+  
+  if [ -n "$DEV_REPO_PATH" ]; then
+    echo "[DEBUG] Aplicando git config em $DEV_REPO_PATH"
+  
+    git -C "$DEV_REPO_PATH" config genesys.lastAppliedBranch "currentStable" || {
+      echo "[ERRO] git config falhou"
+    }
+  
+    echo "[DEBUG] Verificando valor salvo:"
+    git -C "$DEV_REPO_PATH" config genesys.lastAppliedBranch || echo "[ERRO] NÃO SALVOU"
+  else
+    echo "[ERRO] Nenhum repo válido encontrado"
   fi
 
   echo "[+] Limpando serviço antigo"
