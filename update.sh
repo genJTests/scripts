@@ -115,6 +115,9 @@ EOF
       echo "[+] Entrando no repo: $DEV_REPO_PATH"
   
       cd "$DEV_REPO_PATH"
+      
+      echo "[+] Limpando cache Qt Creator"
+      find . -name 'CMakeLists.txt.user' -delete
   
       if sudo -u "$REAL_USER" git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
           sudo -u "$REAL_USER" git config genesys.lastAppliedBranch "currentStable"
