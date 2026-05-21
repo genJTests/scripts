@@ -98,7 +98,8 @@ EOF
 }
 
 update_1_1() {
-# Adicione aqui
+  echo "[+] Update 1.1"
+  # Adicione aqui
 }
 
 run_updates() {
