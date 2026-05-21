@@ -124,7 +124,8 @@ run_updates() {
 
   echo "[+] Versão instalada: $INSTALLED"
   echo "[+] Versão alvo: $CURRENT_VERSION"
-
+  
+  # Adicione novas versoes ao fazer updates (Ex: for v in 1.0 1.1 1.2 do)
   for v in 1.0; do
     if version_gt "$v" "$INSTALLED"; then
       FUNC="update_${v//./_}"
