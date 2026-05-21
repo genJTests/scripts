@@ -175,6 +175,18 @@ $'Nenhuma atualizacao sera realizada ate que o arquivo\n'\
     exit 0
 fi
 
+# VERIFICA ALTERAÇÕES LOCAIS
+
+if [[ -n "$(git status --porcelain)" ]]; then
+    gxmessage -center -buttons "OK" \
+        $'Alteracoes locais detectadas no repositorio.\n\n'\
+$'Existem arquivos modificados, staged ou nao rastreados.\n\n'\
+$'Atualizacao automatica bloqueada para evitar perda de dados.\n\n'\
+$'Resolva manualmente com:\n'\
+"cd $DEV_REPO_PATH && git status"
+    exit 0
+fi
+
 # =========================
 # VERIFICA ATUALIZAÇÃO + CONFLITO
 # =========================
